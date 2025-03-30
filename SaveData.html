@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body{
+        background-image: linear-gradient(to right, #5c91e5 , #983fc6);
+        display: grid;
+        justify-content: center;
+        justify-items: center;
+        place-content: center;
+    }
+    .div2{
+        width: 19rem;
+        display: grid;
+        grid-template-columns: 1fr 0.3fr;
+        align-items: center;
+        height: auto;
+    }
+    h1{
+        margin-top: 150px;
+        color: white;
+        /* padding-left: 60px; */
+    }
+    li{
+        color:white;
+    }
+    #input{
+        color: white;
+        border:1px solid black;
+        background: transparent;
+        box-shadow: 0px 3px 5px black;
+        width: 200px;
+        height: 30px;
+        border-radius: 15px;
+
+    }
+    ::-webkit-input-placeholder{
+        color: white;
+    }
+    .btn{
+    display: inline;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    border-radius: 10px;
+    color: white;
+    background-color: blue;
+    border: 2px solid blue;
+    height: 30px;
+    width: 90px;
+}
+.btn:hover{
+    border: 2px solid greenyellow;
+    background-color: greenyellow;
+}
+.section{
+    display: grid;
+    width: 300px;
+}
+</style>
+<body>
+    <div class="div1">
+        <h1>Add your text data</h1>
+        <input type="text" id="input" placeholder="Add items..."/>
+        <button id="btn1" class="btn">Add item</button>
+    </div><br>
+<search class="section">
+    
+</search>
+</body>
+<script>
+var section = document.querySelector(".section");
+const input = document.getElementById("input").value;
+const btn1 = document.getElementById("btn1");
+const btn2 = document.getElementById("btn2");
+
+const getItem = () => {
+    return JSON.parse(localStorage.getItem("YourData"));
+}
+
+local_Storage = getItem() || [];
+
+const addTodoListStorage = (local_Storage) => {
+    return localStorage.setItem('YourData',JSON.stringify(local_Storage))
+}
+
+const addItems = (curElem) =>{
+    const div = document.createElement('div');
+    div.classList.add("div2");
+    div.innerHTML = `<li>${curElem}</li>  <button id="btn2" class="btn">Delete</button><br>`;
+    section.append(div)
+}
+
+const addToolkit = (e) => {
+    e.preventDefault();
+    // input.value = '';
+    const input = document.getElementById("input").value;
+    if(input !== '' && !local_Storage.includes(input)){ 
+    local_Storage.push(input);
+    local_Storage = [...new Set(local_Storage)];
+    console.log(local_Storage);
+    localStorage.setItem("YourData",JSON.stringify(local_Storage));
+    addItems(input)
+}
+};
+const showgetItems = () => {
+console.log(local_Storage);
+local_Storage.forEach( (curElem) => {
+    addItems(curElem);
+});
+};
+
+
+showgetItems()
+
+var removeItems = (e) => {
+    const todoremove = e.target;
+    var get = todoremove.previousElementSibling.innerText;
+    var parentElem = todoremove.parentElement;
+    console.log(get);
+    local_Storage = local_Storage.filter( (curTodo) => {
+    return curTodo !== get.toLowerCase();
+    console.log(local_Storage);
+});
+addTodoListStorage(local_Storage);
+
+parentElem.remove();
+};
+section.addEventListener('click', (e) => {
+    e.preventDefault();
+    removeItems(e);
+
+});
+
+
+
+btn1.addEventListener("click", (e) => {
+      addToolkit(e);
+});
+
+</script>
+</html>
