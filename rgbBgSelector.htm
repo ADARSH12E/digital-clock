@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <title>Project</title>
+</head>
+<style>
+body{
+    background-image: linear-gradient(to right, #5c91e5 , #983fc6);
+    display: grid;
+    place-content: center;
+    justify-content: center;
+    justify-items: center;
+}
+#btn1{
+    font-size: 15px;
+    width: 90px;
+    height: 35px;
+    color: white;
+    border-radius: 10px;
+    background: rgb(49, 49, 49);
+    box-shadow: 0px 5px 5px rgb(60, 60, 60);
+}
+#btn2{
+    font-size: 15px;
+    width: 90px;
+    height: 35px;
+    color: white;
+    border-radius: 10px;
+    border: 2px solid rgb(93, 250, 20);
+    background: rgb(93, 250, 20);
+    box-shadow: 0px 5px 5px rgb(60, 60, 60);
+}
+#content{
+    text-shadow: 0px 2px 3px black;
+    font-size: 15px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: hwb(0 96% 4%);
+    border-radius: 5px;
+    padding-left: 5px;
+    box-shadow: 0px 2px 3px black;
+    height: 60px;
+    width: 350px;
+    border-left: 3px solid white;
+    background: transparent;
+    backdrop-filter: blur(20px);
+    /* border: 2px solid gray; */
+}
+.div1{
+    display: inline;
+    justify-content: center;
+    justify-items: center;
+    margin-top: 150px;
+}
+#para{
+    text-shadow: 0px 2px 3px black;
+    font-size: 13px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: hwb(0 96% 4%);
+}
+#para1{
+    visibility: hidden;
+}
+#copy{
+    /* color: black; */
+    font-size: 20px;
+}
+</style>
+<body>
+    <div class="div1">
+        <h1>Select rgb background</h1>
+        <button id="btn1">#5c91e5</button>
+        <button id="btn2">#983fc6</button><br>
+        <p id="para">copy code here...</p>
+        <div id="content">
+            background-image: linear-gradient(to right, #5c91e5 , #983fc6);
+        </div>
+    </div>
+
+</body>
+<script>
+    const copy = document.getElementById("copy");
+    let btn1 = document.getElementById('btn1');
+    let btn2 = document.getElementById("btn2");
+    let content = document.getElementById("content");
+    let rgb1 = "#5c91e5";
+    let rgb2 = "#983fc6";
+const hexvalue = () => {
+    let value = "0123456789abcdef";
+    let colors = "#";
+    for (i=0; i<6; i++){
+       colors = colors + value[Math.floor(Math.random()*16)];
+      
+    }
+    return colors;
+}
+const handlebtn1 = () => {
+    rgb1 = hexvalue();
+    console.log(rgb1);
+    document.body.style.backgroundImage = `linear-gradient(to right, ${rgb1} , ${rgb2})`;
+    content.innerHTML = `background-image: linear-gradient(to right, ${rgb1} , ${rgb2})`;
+    btn1.innerHTML = `${rgb1}`;
+}
+
+const handlebtn2 = () => {
+    rgb2 = hexvalue();
+    console.log(rgb2);
+    document.body.style.backgroundImage = `linear-gradient(to right, ${rgb1} , ${rgb2})`;
+    content.innerHTML = `background-image: linear-gradient(to right, ${rgb1} , ${rgb2})`;
+    btn2.innerHTML = `${rgb2}`;
+
+}
+    btn1.addEventListener("click", handlebtn1);
+    btn2.addEventListener("click", handlebtn2);
+
+    
+    
+</script>
+</html>
