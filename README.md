@@ -1,2 +1,2 @@
-# digital-clock
-Digital clock using html , css and js
+# My projects
+Projects using only HTML , CSS and JavaScript
