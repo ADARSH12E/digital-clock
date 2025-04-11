@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bomb Dodger</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      border: 4px solid #fff;
+      background-color: #001;
+      display: block;
+    }
+    #controls {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      gap: 20px;
+    }
+    .btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #333;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    @media (max-width: 768px) {
+      canvas {
+        max-width: 1050px;
+        max-height: 514px;
+      }
+    }
+    @media (max-width: 480px) {
+      canvas {
+        width: 100%;
+        height: auto;
+      }
+      #controls {
+        bottom: 20px;
+      }
+      .btn {
+        width: 6rem;
+        height: 6rem;
+        font-size: 46px;
+      }
+    }
+    @media (max-width: 320px) {
+      .btn {
+        width: 50px;
+        height: 50px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="1050" height="514"></canvas>
+  <div id="controls">
+    <div class="btn" id="left">⬅️</div>
+    <div class="btn" id="jump">🔼</div>
+    <div class="btn" id="right">➡️</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let assets = {};
+    const keys = {};
+    let gameStarted = false;
+    let gameOver = false;
+    let score = 0;
+    let highScore = localStorage.getItem('bombDodgerHighScore') || 0;
+
+    const gravity = 0.5;
+    const jumpPower = -7;
+
+    const player = {
+      x: 300,
+      y: 450,
+      width: 64,
+      height: 64,
+      dx: 0,
+      dy: 0,
+      jumping: false
+    };
+
+    let planes = [];
+    const planeCount = 12;
+
+    function loadAssets(callback) {
+      const imageSources = {
+        player: 'player.png',
+        bomb: 'bomb24.png',
+        plane: 'helicopter.png',
+        bg: 'bg.jpg'
+      };
+
+      const soundSources = {
+        gameOver: 'bombBlast.mp3',
+        // jump: 'jump.mp3',
+        bgm: 'helicopter.mp3'
+      };
+
+      let loaded = 0;
+      const total = Object.keys(imageSources).length + Object.keys(soundSources).length;
+
+      for (let key in imageSources) {
+        const img = new Image();
+        img.src = imageSources[key];
+        img.onload = () => {
+          assets[key] = img;
+          loaded++;
+          if (loaded === total) callback();
+        };
+        img.onerror = () => {
+          console.error(`Failed to load image: ${imageSources[key]}`);
+          loaded++;
+          if (loaded === total) callback();
+        };
+      }
+
+      for (let key in soundSources) {
+        const audio = new Audio(soundSources[key]);
+        assets[key] = audio;
+        audio.oncanplaythrough = () => {
+          loaded++;
+          if (loaded === total) callback();
+        };
+        audio.onerror = () => {
+          console.error(`Failed to load audio: ${soundSources[key]}`);
+          loaded++;
+          if (loaded === total) callback();
+        };
+      }
+    }
+
+    function resetGame() {
+      score = 0;
+      gameOver = false;
+      player.x = 300;
+      player.y = 400;
+      player.dy = 0;
+      player.jumping = false;
+      planes = [];
+      for (let i = 0; i < planeCount; i++) {
+        planes.push({
+          x: Math.random() * -400,
+          y: Math.random() * 100,
+          speed: 2 + Math.random() * 2,
+          bomb: null,
+          bombTimer: Math.random() * 100 + 30
+        });
+      }
+    }
+
+    function drawStartScreen() {
+      ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'red';
+      ctx.font = '64px sans-serif';
+      ctx.fillText('Bomb Dodger', 300, 150);
+      ctx.font = '28px sans-serif';
+      ctx.fillStyle = 'black';
+      ctx.fillText('Press ENTER or Tap to Start', 330, 220);
+      ctx.fillText('GAME BY ADARSH', 370, 260);
+    }
+
+    function drawGameOverScreen() {
+      ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'red';
+      ctx.font = '64px sans-serif';
+      ctx.fillText('GAME OVER', 320, 150);
+      ctx.fillStyle = 'black';
+      ctx.font = '32px sans-serif';
+      ctx.fillText(`Score: ${score}`, 430, 220);
+      ctx.fillText(`High Score: ${highScore}`, 400, 260);
+      ctx.fillText('Press R or Tap to Restart', 350, 320);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
+
+      ctx.drawImage(assets.player, player.x, player.y, player.width, player.height);
+
+      for (let plane of planes) {
+        ctx.drawImage(assets.plane, plane.x, plane.y, 100, 40);
+        if (plane.bomb) {
+          ctx.drawImage(assets.bomb, plane.bomb.x, plane.bomb.y, 24, 24);
+        }
+      }
+
+      ctx.fillStyle = 'black';
+      ctx.font = '20px sans-serif';
+      ctx.fontWeight = 'bold';
+      ctx.fillText(`Score: ${score}`, 10, 25);
+      ctx.fillText(`High Score: ${highScore}`, 300, 25);
+      ctx.fillText(`GAME BY ADARSH`, 550, 25);
+
+    }
+
+    function update() {
+      if (gameOver || !gameStarted) return;
+
+      // Update player position with boundary checks
+      player.x += player.dx;
+      
+      // Left boundary (0) and right boundary (canvas.width - player.width)
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
+      if (player.jumping) {
+        player.dy += gravity;
+        player.y += player.dy;
+
+        if (player.y >= 400) {
+          player.y = 400;
+          player.dy = 0;
+          player.jumping = false;
+        }
+      }
+
+      for (let plane of planes) {
+        plane.x += plane.speed;
+        if (plane.x > canvas.width) {
+          plane.x = Math.random() * -400;
+          plane.y = Math.random() * 100;
+          plane.bomb = null;
+        }
+
+        if (!plane.bomb && plane.bombTimer-- <= 0) {
+          plane.bomb = {
+            x: plane.x + 38,
+            y: plane.y + 40
+          };
+          plane.bombTimer = Math.random() * 100 + 30;
+        }
+
+        if (plane.bomb) {
+          plane.bomb.y += 4;
+
+          if (plane.bomb.y > canvas.height) {
+            plane.bomb = null;
+            score++;
+            if (score > highScore) {
+              highScore = score;
+              localStorage.setItem('bombDodgerHighScore', highScore);
+            }
+          } else if (
+            plane.bomb.x < player.x + player.width &&
+            plane.bomb.x + 24 > player.x &&
+            plane.bomb.y < player.y + player.height &&
+            plane.bomb.y + 24 > player.y
+          ) {
+            if (assets.gameOver) assets.gameOver.play();
+            gameOver = true;
+            if (assets.bgm) assets.bgm.pause();
+          }
+        }
+      }
+    }
+
+    function gameLoop() {
+      if (!gameStarted) {
+        drawStartScreen();
+      } else if (gameOver) {
+        drawGameOverScreen();
+      } else {
+        update();
+        draw();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!gameStarted && e.key === 'Enter') {
+        gameStarted = true;
+        resetGame();
+        if (assets.bgm) {
+          assets.bgm.loop = true;
+          assets.bgm.play();
+        }
+      }
+      if (gameOver && e.key === 'r') {
+        resetGame();
+        gameOver = false;
+        if (assets.bgm) {
+          assets.bgm.currentTime = 0;
+          assets.bgm.play();
+        }
+      }
+      if (e.key === 'ArrowLeft') player.dx = -5;
+      if (e.key === 'ArrowRight') player.dx = 5;
+      if (e.key === 'ArrowUp' && !player.jumping) {
+        player.jumping = true;
+        player.dy = jumpPower;
+        if (assets.jump) assets.jump.play();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.dx = 0;
+    });
+
+    // Touch controls with boundary checks
+    document.getElementById('left').addEventListener('touchstart', () => {
+      player.dx = -5;
+    });
+    document.getElementById('right').addEventListener('touchstart', () => {
+      player.dx = 5;
+    });
+    document.getElementById('jump').addEventListener('touchstart', () => {
+      if (!player.jumping) {
+        player.jumping = true;
+        player.dy = jumpPower;
+        if (assets.jump) assets.jump.play();
+      }
+    });
+    document.getElementById('left').addEventListener('touchend', () => {
+      if (player.dx < 0) player.dx = 0;
+    });
+    document.getElementById('right').addEventListener('touchend', () => {
+      if (player.dx > 0) player.dx = 0;
+    });
+
+    canvas.addEventListener('click', () => {
+      if (!gameStarted || gameOver) {
+        gameStarted = true;
+        resetGame();
+        if (assets.bgm) {
+          assets.bgm.loop = true;
+          assets.bgm.play();
+        }
+      }
+    });
+
+    loadAssets(() => {
+      resetGame();
+      gameLoop();
+    });
+  </script>
+</body>
+</html>
